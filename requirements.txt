@@ -43,3 +43,4 @@ watchdog==6.0.0
 python-dotenv
 langchain
 openai
+langchain_community
