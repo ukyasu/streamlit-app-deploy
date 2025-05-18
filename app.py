@@ -1,45 +1,67 @@
-import streamlit as st
+from dotenv import load_dotenv
+load_dotenv()
 
-st.title("サンプルアプリ②: 少し複雑なWebアプリ")
+import os
+import streamlit as st  # Streamlitをインポート
 
-st.write("##### 動作モード1: 文字数カウント")
-st.write("入力フォームにテキストを入力し、「実行」ボタンを押すことで文字数をカウントできます。")
-st.write("##### 動作モード2: BMI値の計算")
-st.write("身長と体重を入力することで、肥満度を表す体型指数のBMI値を算出できます。")
+st.title("Lesson21　Chapter 6 【提出課題】LLM機能を搭載したWebアプリ")
 
-selected_item = st.radio(
-    "動作モードを選択してください。",
-    ["文字数カウント", "BMI値の計算"]
+from langchain.chat_models import ChatOpenAI  # 修正済み
+from langchain.schema import SystemMessage, HumanMessage
+
+llm = ChatOpenAI(model_name="gpt-4o-mini", temperature=0)
+
+# Webアプリの概要と操作方法を表示
+st.write("### Webアプリの概要")
+st.write("このアプリでは、選択した専門家の視点で入力されたプロンプトに対する回答を生成します。")
+st.write("1. 専門家の種類を選択してください（ファッションスタイリストまたは料理人）。")
+st.write("2. プロンプトを入力し、送信ボタンを押してください。")
+st.write("3. 選択した専門家の視点での回答が表示されます。")
+st.write("---")  # 水平線を追加
+
+# 専門家の種類を選択するラジオボタンを追加
+st.write("### LLMに振る舞わせる専門家を選択してください：")  # Webアプリの概要と同じ文字サイズ
+expert_type = st.radio(
+    "",
+    ["ファッションスタイリスト", "料理人"]
 )
 
-st.divider()
+# LLM処理を行う関数を定義
+def get_llm_response(user_input, expert_type):
+    """
+    入力テキストと選択された専門家の種類を基にLLMからの回答を取得します。
 
-if selected_item == "文字数カウント":
-    input_message = st.text_input(label="文字数のカウント対象となるテキストを入力してください。")
-    text_count = len(input_message)
+    Args:
+        user_input (str): ユーザーが入力したテキスト。
+        expert_type (str): 選択された専門家の種類。
 
-else:
-    height = st.text_input(label="身長（cm）を入力してください。")
-    weight = st.text_input(label="体重（kg）を入力してください。")
+    Returns:
+        str: LLMからの回答。
+    """
+    if expert_type == "ファッションスタイリスト":
+        system_message = "あなたは優秀なファッションスタイリストです。"
+    elif expert_type == "料理人":
+        system_message = "あなたはプロの料理人です。"
 
-if st.button("実行"):
-    st.divider()
+    # LangChainを使ってLLMにプロンプトを渡す
+    messages = [
+        SystemMessage(content=system_message),
+        HumanMessage(content=user_input)
+    ]
 
-    if selected_item == "文字数カウント":
-        if input_message:
-            st.write(f"文字数: **{text_count}**")
+    result = llm(messages)
+    return result.content
 
-        else:
-            st.error("カウント対象となるテキストを入力してから「実行」ボタンを押してください。")
+# 入力フォームを作成
+user_input = st.text_area(label="プロンプトを入力してください：", height=150)
 
+if st.button("送信"):
+    if user_input:
+        # 関数を利用してLLMからの回答を取得
+        response = get_llm_response(user_input, expert_type)
+
+        # 結果を画面に表示
+        st.write("### 回答:")
+        st.write(response)
     else:
-        if height and weight:
-            try:
-                bmi = round(int(weight) / ((int(height)/100) ** 2), 1)
-                st.write(f"BMI値: {bmi}")
-
-            except ValueError as e:
-                st.error("身長と体重は数値で入力してください。")
-
-        else:
-            st.error("身長と体重をどちらも入力してください。")
+        st.error("プロンプトを入力してください。")
